@@ -7,14 +7,15 @@ pipeline {
     }
 
     environment {
-        TEMURIN_VERSION = '21.0.11'
+        TEMURIN_MAJOR_VERSION = '21'
+        TEMURIN_VERSION = "${env.TEMURIN_MAJOR_VERSION}.0.11"
         TEMURIN_PATCH_RELEASE = '10'
-        JAVA_HOME = "/var/lib/jenkins/workspace/solr-cicd/java/jdk-${env.JAVA_VERSION}/"
+        JAVA_HOME = "/var/lib/jenkins/workspace/solr-cicd/java/jdk-${env.TEMURIN_VERSION}+${env.TEMURIN_PATCH_RELEASE}/"
         // Update PATH to include the new JAVA_HOME/bin
         PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
         SOLR_VERSION = '10.0.0'
         // SOLR_OPTS = "${env.SOLR_OPTS} -Djava.locale.providers=COMPAT,CLDR,SPI"
-        JAVA_TOOL_OPTIONS = '-Djava.locale.providers=COMPAT,CLDR,SPI --add-opens=java.base/java.lang=ALL-UNNAMED'
+        // JAVA_TOOL_OPTIONS = '-Djava.locale.providers=COMPAT,CLDR,SPI --add-opens=java.base/java.lang=ALL-UNNAMED'
     }
 
     stages {
@@ -30,26 +31,26 @@ pipeline {
       
         stage('Download Temurin JDK') {
             when {
-                expression { return !fileExists("downloads/OpenJDK21U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz") }
+                expression { return !fileExists("downloads/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz") }
             }
             steps {
               // https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.11%2B10/OpenJDK21U-jdk_x64_linux_hotspot_21.0.11_10.tar.gz
                     echo "HTTP Getting Temurin JDK"
                     httpRequest(
-                        url: "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-${env.TEMURIN_VERSION}%2B${env.TEMURIN_PATCH_RELEASE}/OpenJDK21U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz",
-                        outputFile: "downloads/OpenJDK21U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz"
+                        url: "https://github.com/adoptium/temurin${env.TEMURIN_MAJOR_VERSION}-binaries/releases/download/jdk-${env.TEMURIN_VERSION}%2B${env.TEMURIN_PATCH_RELEASE}/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz",
+                        outputFile: "downloads/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz"
                     )
 
             }
         }
 
-        stage('Extract Linux OpenJDK') {
+        stage('Extract Temurin JDK') {
            when {
-                expression { return !fileExists("java/jdk-${env.TEMURIN_VERSION}") }
+                expression { return !fileExists("java/jdk-${env.TEMURIN_VERSION}+${env.TEMURIN_PATCH_RELEASE}") }
             }
             steps {
                 // Extracts the file into the specified directory
-                untar file: "downloads/OpenJDK21U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz", dir: 'java'
+                untar file: "downloads/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz", dir: 'java'
             }
         }
 
