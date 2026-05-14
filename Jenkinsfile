@@ -12,6 +12,7 @@ pipeline {
         // Update PATH to include the new JAVA_HOME/bin
         PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
         SOLR_VERSION = '10.0.0'
+        SOLR_OPTS = "${env.SOLR_OPTS} -Djava.locale.providers=COMPAT,CLDR,SPI"
     }
 
     stages {
