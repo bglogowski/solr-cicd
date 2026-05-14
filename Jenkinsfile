@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        JAVA_VERSION = '26.0.1'
+        JAVA_VERSION = '21.0.2'
         JAVA_HOME = "/var/lib/jenkins/workspace/solr-cicd/java/jdk-${env.JAVA_VERSION}/"
         // Update PATH to include the new JAVA_HOME/bin
         PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
@@ -32,7 +32,7 @@ pipeline {
             steps {
                     echo "HTTP Getting Linux OpenJDK"
                     httpRequest(
-                        url: "https://download.java.net/java/GA/jdk${env.JAVA_VERSION}/458fda22e4c54d5ba572ab8d2b22eb83/8/GPL/openjdk-${env.JAVA_VERSION}_linux-x64_bin.tar.gz",
+                        url: "https://download.java.net/java/GA/jdk${env.JAVA_VERSION}/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-${env.JAVA_VERSION}_linux-x64_bin.tar.gz",
                         outputFile: "downloads/openjdk-${env.JAVA_VERSION}_linux-x64_bin.tar.gz"
                     )
 
