@@ -78,6 +78,9 @@ pipeline {
         }
 
         stage('Build a full binary distribution') {
+            when {
+                expression { return !fileExists("src/solr-${env.SOLR_VERSION}/solr/packaging/build/distributions/solr-${env.SOLR_VERSION}-SNAPSHOT.tgz") }
+            }
             steps {
                 dir("src/solr-${env.SOLR_VERSION}") {
                     sh 'pwd'
@@ -99,6 +102,8 @@ pipeline {
             }
         }
 
+      // src/solr-10.0.0/solr/packaging/build/distributions/solr-10.0.0-SNAPSHOT.tgz
+      // src/solr-10.0.0/solr/packaging/build/distributions/solr-10.0.0-SNAPSHOT-slim.tgz
 
 
       
@@ -108,6 +113,7 @@ pipeline {
         always {
             dir("src/solr-${env.SOLR_VERSION}") {
                 junit '**/build/test-results/**/*.xml'
+                archiveArtifacts artifacts: 'solr/packaging/build/distributions/*.tgz', onlyIfSuccessful: true
             }
         }
     }
