@@ -12,11 +12,10 @@ pipeline
    {
       steps {
         echo "Getting Exploratory Testing Repo"
-        git(
-        url:'git@github.com:bglogowski/solr-cicd.git',
-        credentialsId: 'bglogowski',
-        branch: "main"
-        )
+        httpRequest(
+          url: 'https://www.apache.org/dyn/closer.lua/solr/solr/10.0.0/solr-10.0.0-src.tgz?action=download',
+          outputFile: 'solr-10.0.0-src.tgz',
+          )
      }
 
    }
