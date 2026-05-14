@@ -80,8 +80,28 @@ pipeline {
             }
         }
 
+        stage('Test') {
+            steps {
+                dir("src/solr-${env.SOLR_VERSION}") {
+                    // Runs all tests
+                    sh './gradlew test'
+
+                    // Or run specific module tests, e.g., for Solr Core
+                    // sh './gradlew :solr:core:test'
+                }
+            }
+        }
+
 
 
       
+    }
+
+    post {
+        always {
+            dir("src/solr-${env.SOLR_VERSION}") {
+                junit '**/build/test-results/**/*.xml'
+            }
+        }
     }
 }
