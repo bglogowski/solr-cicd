@@ -9,15 +9,16 @@ pipeline
   stages {
 
 
-    stage('Create Directories') {
+    stage('Create Directories')
+    {
             steps {
                 // Creates any missing parent directories
                 sh 'mkdir -p downloads'
                 sh 'mkdir -p src'
             }
-        }
+   }
     
-   stage('Get solr-cicd GitHub Repo')
+   stage('Get Solr Source Code')
    {
       steps {
         if (!fileExists('downloads/solr-10.0.0-src.tgz')) {
@@ -30,13 +31,14 @@ pipeline
           echo "Solr Source Code already exists."
         }
      }
+   }
 
      
 
      stage('Extract') {
             steps {
                 // Extracts the file into the specified directory
-                untar file: 'solr-10.0.0-src.tgz', dir: 'src'
+                untar file: 'downloads/solr-10.0.0-src.tgz', dir: 'src'
             }
         }
 
