@@ -40,6 +40,9 @@ pipeline {
         }
 
         stage('Extract Linux OpenJDK') {
+           when {
+                expression { return !fileExists("java/jdk-${env.JAVA_VERSION}") }
+            }
             steps {
                 // Extracts the file into the specified directory
                 untar file: "downloads/openjdk-${env.JAVA_VERSION}_linux-x64_bin.tar.gz", dir: 'java'
@@ -64,6 +67,9 @@ pipeline {
      
 
         stage('Extract Solr Source Code') {
+           when {
+                expression { return !fileExists("src/solr-${env.SOLR_VERSION}") }
+            }
             steps {
                 // Extracts the file into the specified directory
                 untar file: "downloads/solr-${env.SOLR_VERSION}-src.tgz", dir: 'src'
