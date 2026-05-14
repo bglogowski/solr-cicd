@@ -88,6 +88,7 @@ pipeline {
             steps {
                 dir("src/solr-${env.SOLR_VERSION}") {
                     sh 'pwd'
+                    sh './gradlew clean'
                     sh './gradlew assemble'
                 }
                 
