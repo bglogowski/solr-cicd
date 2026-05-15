@@ -159,27 +159,29 @@ pipeline {
         }
 
         stage('Run Tests') {
+            when {
+                expression { !params.SKIP_TESTS }
+            }
+
             parallel {
-            steps {
-              stage('Core Tests') {
-                dir("src/solr-${env.SOLR_VERSION}") {
-                    // Runs all tests
-                    sh """
-                        ./gradlew \
-                            :solr:core:test \
-                                ${env.TEST_OPTS} \
-                                -Dtests.seed=${env.TESTS_SEED} \
-                                ${params.RUN_BEAST_TESTS ? "-Dtests.iters=${params.BEAST_COUNT}" : ''} \
-                                --continue \
-                                -PtestJvmArgs='-Xmx1g'
-                        """
-
-                    // Or run specific module tests, e.g., for Solr Core
-                    // sh './gradlew :solr:core:test'
+              
+                stage('Core Tests') {
+                    steps {
+                        dir("src/solr-${env.SOLR_VERSION}") {
+                            sh """
+                                ./gradlew \
+                                    :solr:core:test \
+                                    ${env.TEST_OPTS} \
+                                    -Dtests.seed=${env.TESTS_SEED} \
+                                    ${params.RUN_BEAST_TESTS ? "-Dtests.iters=${params.BEAST_COUNT}" : ''} \
+                                    --continue \
+                                    -PtestJvmArgs='-Xmx1g'
+                               """
+                        }
+                    }
                 }
-              }
 
-                   stage('Solrj Tests') {
+                stage('Solrj Tests') {
                     steps {
                         sh """
                             ./gradlew \
@@ -236,15 +238,14 @@ pipeline {
 
               
             }
-            }
         }
+    }
 
       // src/solr-10.0.0/solr/packaging/build/distributions/solr-10.0.0-SNAPSHOT.tgz
       // src/solr-10.0.0/solr/packaging/build/distributions/solr-10.0.0-SNAPSHOT-slim.tgz
 
 
-      
-    }
+    
 
     post {
         always {
