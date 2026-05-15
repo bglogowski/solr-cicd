@@ -1,8 +1,6 @@
 pipeline {
   
-    agent {
-        docker { image 'rockylinux/rockylinux:10.1.2025112' }
-    }
+    agent any
 
     options {
         timeout(time: 4, unit: 'HOURS')
@@ -11,29 +9,6 @@ pipeline {
         disableConcurrentBuilds()
     }
   
-    parameters {
-        booleanParam(
-            name: 'RUN_SLOW_TESTS',
-            defaultValue: false,
-            description: 'Include @Slow-annotated tests (significantly increases build time)'
-        )
-        booleanParam(
-            name: 'RUN_BEAST_TESTS',
-            defaultValue: true,
-            description: 'Run tests in beast mode (repeat each test multiple times)'
-        )
-        string(
-            name: 'BEAST_COUNT',
-            defaultValue: '5',
-            description: 'Number of repetitions per test in beast mode'
-        )
-        booleanParam(
-            name: 'SKIP_TESTS',
-            defaultValue: false,
-            description: 'Build only, skip all tests (useful for artifact-only builds)'
-        )
-    }
-
     environment {
         SOLR_VERSION = '10.0.0'
         ZOOKEEPER_VERSION = '3.9.5'
@@ -48,7 +23,6 @@ pipeline {
 
         stage('Create Directories') {
             steps {
-                // Creates any missing parent directories
                 sh 'mkdir -p downloads'
                 sh 'mkdir -p java'
                 sh 'mkdir -p src'
@@ -74,7 +48,6 @@ pipeline {
                 expression { return !fileExists("java/jdk-${env.TEMURIN_VERSION}+${env.TEMURIN_PATCH_RELEASE}") }
             }
             steps {
-                // Extracts the file into the specified directory
                 untar file: "downloads/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz", dir: 'java'
             }
         }
@@ -90,7 +63,6 @@ pipeline {
                         url: "https://www.apache.org/dyn/closer.lua/zookeeper/zookeeper-${env.ZOOKEEPER_VERSION}/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz",
                         outputFile: "downloads/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz"
                     )
-
             }
         }
       
@@ -104,7 +76,6 @@ pipeline {
             }
         }
 
-      
         stage('Get Solr') {
             when {
                 expression { return !fileExists("downloads/solr-${env.SOLR_VERSION}.tgz") }
@@ -135,5 +106,5 @@ pipeline {
             }
         }
 
-
+    }
 }
