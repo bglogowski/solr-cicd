@@ -3,10 +3,42 @@ pipeline {
     agent any
 
     options {
+        timeout(time: 4, unit: 'HOURS')
+        buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '5'))
+        timestamps()
         disableConcurrentBuilds()
+    }
+  
+    parameters {
+        string(
+            name: 'SOLR_BRANCH',
+            defaultValue: 'main',
+            description: 'Branch or tag to build (e.g. main, branch_9x, releases/solr/9.7.0)'
+        )
+        booleanParam(
+            name: 'RUN_SLOW_TESTS',
+            defaultValue: false,
+            description: 'Include @Slow-annotated tests (significantly increases build time)'
+        )
+        booleanParam(
+            name: 'RUN_BEAST_TESTS',
+            defaultValue: true,
+            description: 'Run tests in beast mode (repeat each test multiple times)'
+        )
+        string(
+            name: 'BEAST_COUNT',
+            defaultValue: '5',
+            description: 'Number of repetitions per test in beast mode'
+        )
+        booleanParam(
+            name: 'SKIP_TESTS',
+            defaultValue: false,
+            description: 'Build only, skip all tests (useful for artifact-only builds)'
+        )
     }
 
     environment {
+        JAVA_TOOL_OPTIONS = '-Xmx2g -XX:+HeapDumpOnOutOfMemoryError'
         TEMURIN_MAJOR_VERSION = '21'
         TEMURIN_VERSION = "${env.TEMURIN_MAJOR_VERSION}.0.11"
         TEMURIN_PATCH_RELEASE = '10'
@@ -16,6 +48,21 @@ pipeline {
         SOLR_VERSION = '10.0.0'
         // SOLR_OPTS = "${env.SOLR_OPTS} -Djava.locale.providers=COMPAT,CLDR,SPI"
         // JAVA_TOOL_OPTIONS = '-Djava.locale.providers=COMPAT,CLDR,SPI --add-opens=java.base/java.lang=ALL-UNNAMED'
+        GRADLE_OPTS     = '-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=4'
+        GRADLE_USER_HOME = "${WORKSPACE}/.gradle-home"
+             // Solr test settings
+        TEST_OPTS = [
+            '-Dtests.multiplier=1',
+            '-Dtests.nightly=false',
+            '-Dtests.weekly=false',
+            '-Dtests.badapples=false',
+            "-Dtests.slow=${params.RUN_SLOW_TESTS}",
+            '-Dtests.asserts=true',
+            '-Dtests.timeoutSuite=900000',   // 15 min per suite
+        ].join(' ')
+
+        // Randomized testing seed (fixed per build for reproducibility)
+        TESTS_SEED = "${currentBuild.startTimeInMillis}"
     }
 
     stages {
@@ -81,6 +128,16 @@ pipeline {
             }
         }
 
+        stage('Validate Environment') {
+            steps {
+                sh '$JAVA_HOME/bin/java -version'
+                dir("src/solr-${env.SOLR_VERSION}") {
+                    sh './gradlew --version'
+                    sh './gradlew javaToolchains || true'
+                }
+            }
+        }
+
         stage('Build a full binary distribution') {
             when {
                 expression { return !fileExists("src/solr-${env.SOLR_VERSION}/solr/packaging/build/distributions/solr-${env.SOLR_VERSION}-SNAPSHOT.tgz") }
@@ -93,17 +150,92 @@ pipeline {
                 }
                 
             }
+            post {
+                failure {
+                    echo 'Compilation failed — archiving any error logs.'
+                    archiveArtifacts artifacts: '**/build/tmp/**/*.log', allowEmptyArchive: true
+                }
+            }
         }
 
-        stage('Test') {
+        stage('Run Tests') {
+            parallel {
             steps {
+              stage('Core Tests') {
                 dir("src/solr-${env.SOLR_VERSION}") {
                     // Runs all tests
-                    sh './gradlew test'
+                    sh """
+                        ./gradlew \
+                            :solr:core:test \
+                                ${env.TEST_OPTS} \
+                                -Dtests.seed=${env.TESTS_SEED} \
+                                ${params.RUN_BEAST_TESTS ? "-Dtests.iters=${params.BEAST_COUNT}" : ''} \
+                                --continue \
+                                -PtestJvmArgs='-Xmx1g'
+                        """
 
                     // Or run specific module tests, e.g., for Solr Core
                     // sh './gradlew :solr:core:test'
                 }
+              }
+
+                   stage('Solrj Tests') {
+                    steps {
+                        sh """
+                            ./gradlew \
+                                :solr:solrj:test \
+                                :solr:solrj-streaming:test \
+                                :solr:solrj-zookeeper:test \
+                                ${env.TEST_OPTS} \
+                                -Dtests.seed=${env.TESTS_SEED} \
+                                --continue \
+                                -PtestJvmArgs='-Xmx1g'
+                        """
+                    }
+                }
+
+                stage('Module Tests') {
+                    steps {
+                        sh """
+                            ./gradlew \
+                                :solr:modules:analysis-extras:test \
+                                :solr:modules:clustering:test \
+                                :solr:modules:cross-dc:test \
+                                :solr:modules:extraction:test \
+                                :solr:modules:gcs-repository:test \
+                                :solr:modules:hdfs:test \
+                                :solr:modules:jwt-auth:test \
+                                :solr:modules:langid:test \
+                                :solr:modules:ltr:test \
+                                :solr:modules:opentelemetry:test \
+                                :solr:modules:s3-repository:test \
+                                :solr:modules:scripting:test \
+                                :solr:modules:sql:test \
+                                ${env.TEST_OPTS} \
+                                -Dtests.seed=${env.TESTS_SEED} \
+                                --continue \
+                                -PtestJvmArgs='-Xmx1g'
+                        """
+                    }
+                }
+
+                stage('Test Framework / API Tests') {
+                    steps {
+                        sh """
+                            ./gradlew \
+                                :solr:test-framework:test \
+                                :solr:api:test \
+                                ${env.TEST_OPTS} \
+                                -Dtests.seed=${env.TESTS_SEED} \
+                                --continue \
+                                -PtestJvmArgs='-Xmx512m'
+                        """
+                    }
+                }
+
+
+              
+            }
             }
         }
 
