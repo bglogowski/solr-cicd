@@ -1,6 +1,8 @@
 pipeline {
   
-    agent any
+    agent {
+        docker { image 'rockylinux/rockylinux:10.1.2025112' }
+    }
 
     options {
         timeout(time: 4, unit: 'HOURS')
