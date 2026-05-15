@@ -1,6 +1,8 @@
 pipeline {
   
-    agent any
+    agent {
+        label 'linux'
+    }
 
     options {
         timeout(time: 4, unit: 'HOURS')
@@ -146,7 +148,14 @@ pipeline {
                 dir("src/solr-${env.SOLR_VERSION}") {
                     sh 'pwd'
                     sh './gradlew clean'
-                    sh './gradlew assemble'
+                    sh """
+                    ./gradlew \
+                        compileJava \
+                        compileTestJava \
+                        --parallel \
+                        --continue \
+                        -PvalidateLogLevels=false
+                """
                 }
                 
             }
@@ -239,10 +248,52 @@ pipeline {
               
             }
         }
-    }
 
       // src/solr-10.0.0/solr/packaging/build/distributions/solr-10.0.0-SNAPSHOT.tgz
       // src/solr-10.0.0/solr/packaging/build/distributions/solr-10.0.0-SNAPSHOT-slim.tgz
+
+          stage('Code Quality') {
+            parallel {
+
+                stage('Forbidden APIs') {
+                    steps {
+                        sh './gradlew forbiddenApisMain forbiddenApisTest --continue'
+                    }
+                }
+
+                stage('Checkstyle') {
+                    steps {
+                        sh './gradlew checkstyleMain checkstyleTest --continue'
+                    }
+                    post {
+                        always {
+                            recordIssues(
+                                tools: [checkStyle(pattern: '**/build/reports/checkstyle/*.xml')],
+                                qualityGates: [[threshold: 0, type: 'NEW', unstable: true]]
+                            )
+                        }
+                    }
+                }
+
+                stage('Rat License Check') {
+                    steps {
+                        sh './gradlew rat --continue'
+                    }
+                }
+            }
+        }
+
+        stage('Assemble Distributions') {
+            steps {
+                sh """
+                    ./gradlew \
+                        :solr:packaging:assembleBin \
+                        :solr:packaging:assembleSrc \
+                        --parallel
+                """
+            }
+        }
+    }
 
 
     
