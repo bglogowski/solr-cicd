@@ -1,8 +1,6 @@
 pipeline {
   
-    agent {
-        label 'linux'
-    }
+    agent any
 
     options {
         timeout(time: 4, unit: 'HOURS')
