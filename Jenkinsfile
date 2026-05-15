@@ -12,11 +12,6 @@ pipeline {
     }
   
     parameters {
-        string(
-            name: 'SOLR_BRANCH',
-            defaultValue: 'main',
-            description: 'Branch or tag to build (e.g. main, branch_9x, releases/solr/9.7.0)'
-        )
         booleanParam(
             name: 'RUN_SLOW_TESTS',
             defaultValue: false,
@@ -40,19 +35,23 @@ pipeline {
     }
 
     environment {
-        JAVA_TOOL_OPTIONS = '-Xmx2g -XX:+HeapDumpOnOutOfMemoryError'
+        SOLR_VERSION = '10.0.0'
+      
         TEMURIN_MAJOR_VERSION = '21'
         TEMURIN_VERSION = "${env.TEMURIN_MAJOR_VERSION}.0.11"
         TEMURIN_PATCH_RELEASE = '10'
-        JAVA_HOME = "/var/lib/jenkins/workspace/solr-cicd/java/jdk-${env.TEMURIN_VERSION}+${env.TEMURIN_PATCH_RELEASE}/"
-        // Update PATH to include the new JAVA_HOME/bin
-        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
-        SOLR_VERSION = '10.0.0'
-        // SOLR_OPTS = "${env.SOLR_OPTS} -Djava.locale.providers=COMPAT,CLDR,SPI"
+        JAVA_HOME = "/var/lib/jenkins/workspace/solr-cicd/java/jdk-${env.TEMURIN_VERSION}+${env.TEMURIN_PATCH_RELEASE}"
+        JAVA_TOOL_OPTIONS = '-Xmx2g -XX:+HeapDumpOnOutOfMemoryError'
         // JAVA_TOOL_OPTIONS = '-Djava.locale.providers=COMPAT,CLDR,SPI --add-opens=java.base/java.lang=ALL-UNNAMED'
+
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+        
+        // SOLR_OPTS = "${env.SOLR_OPTS} -Djava.locale.providers=COMPAT,CLDR,SPI"
+        
         GRADLE_OPTS     = '-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=4'
         GRADLE_USER_HOME = "${WORKSPACE}/.gradle-home"
-             // Solr test settings
+      
+        // Solr test settings
         TEST_OPTS = [
             '-Dtests.multiplier=1',
             '-Dtests.nightly=false',
@@ -83,7 +82,6 @@ pipeline {
                 expression { return !fileExists("downloads/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz") }
             }
             steps {
-              // https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.11%2B10/OpenJDK21U-jdk_x64_linux_hotspot_21.0.11_10.tar.gz
                     echo "HTTP Getting Temurin JDK"
                     httpRequest(
                         url: "https://github.com/adoptium/temurin${env.TEMURIN_MAJOR_VERSION}-binaries/releases/download/jdk-${env.TEMURIN_VERSION}%2B${env.TEMURIN_PATCH_RELEASE}/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz",
