@@ -60,7 +60,7 @@ pipeline {
             steps {
                     echo "HTTP Getting ZooKeeper"
                     httpRequest(
-                        url: "https://www.apache.org/dyn/closer.lua/zookeeper/zookeeper-${env.ZOOKEEPER_VERSION}/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz",
+                        url: "https://dlcdn.apache.org/zookeeper/zookeeper-${env.ZOOKEEPER_VERSION}/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz",
                         outputFile: "downloads/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz"
                     )
             }
