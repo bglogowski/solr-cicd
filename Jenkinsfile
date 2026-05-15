@@ -87,7 +87,7 @@ pipeline {
                         url: "https://downloads.apache.org/zookeeper/KEYS",
                         outputFile: "downloads/zookeeper/KEYS"
                 )
-                sh 'gpg --import KEYS'
+                sh 'gpg --import downloads/zookeeper/KEYS'
             }
         }
 
