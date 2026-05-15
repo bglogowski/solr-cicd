@@ -11,7 +11,7 @@ pipeline {
   
     environment {
         SOLR_VERSION = '10.0.0'
-        ZOOKEEPER_VERSION = '3.9.5'
+        ZOOKEEPER_VERSION = '3.9.4'  // matches the ZooKeeper version included with Solr
         TEMURIN_MAJOR_VERSION = '21'
         TEMURIN_VERSION = "${env.TEMURIN_MAJOR_VERSION}.0.11"
         TEMURIN_PATCH_RELEASE = '10'
