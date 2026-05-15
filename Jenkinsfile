@@ -67,10 +67,16 @@ pipeline {
                 expression { return !fileExists("java/jdk-${env.TEMURIN_VERSION}+${env.TEMURIN_PATCH_RELEASE}") }
             }
             steps {
-                sh "gpg --verify downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz.sig downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz"
+                sh """
+                    gpg --verify \
+                        downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz.sig \
+                        downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz \
+                        || rm -f downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz
+                """
                 untar file: "downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz", dir: 'java'
             }
         }
+
 
         stage('Get Apache ZooKeeper GPG Keys') {
             when {
@@ -110,7 +116,12 @@ pipeline {
                 expression { return !fileExists("src/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin") }
             }
             steps {
-                sh "gpg --verify downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz"
+                sh """
+                    gpg --verify \
+                        downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc \
+                        downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz \
+                        || rm -f downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz
+                """
                 untar file: "downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz", dir: 'src'
             }
         }
@@ -152,7 +163,12 @@ pipeline {
                 expression { return !fileExists("src/solr-${env.SOLR_VERSION}") }
             }
             steps {
-                sh "gpg --verify downloads/solr/solr-${env.SOLR_VERSION}.tgz.asc downloads/solr/solr-${env.SOLR_VERSION}.tgz"
+                sh """
+                    gpg --verify \
+                        downloads/solr/solr-${env.SOLR_VERSION}.tgz.asc \
+                        downloads/solr/solr-${env.SOLR_VERSION}.tgz \
+                        || rm -f downloads/solr/solr-${env.SOLR_VERSION}.tgz
+                """
                 untar file: "downloads/solr-${env.SOLR_VERSION}.tgz", dir: 'src'
             }
         }
@@ -169,4 +185,16 @@ pipeline {
         }
 
     }
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo 'Build was successful!'
+        }
+        failure {
+            echo 'Build failed.'
+        }
+    }
+
 }
