@@ -187,6 +187,7 @@ pipeline {
     }
     post {
         always {
+            echo 'Always cleanup temp files.'
             // cleanWs()
         }
         success {
