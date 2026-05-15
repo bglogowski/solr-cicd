@@ -60,9 +60,20 @@ pipeline {
             steps {
                     echo "HTTP Getting ZooKeeper"
                     httpRequest(
-                        url: "https://dlcdn.apache.org/zookeeper/zookeeper-${env.ZOOKEEPER_VERSION}/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz",
+                        url: "https://dlcdn.apache.org/zookeeper/stable/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz",
                         outputFile: "downloads/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz"
                     )
+              
+                    httpRequest(
+                        url: "https://dlcdn.apache.org/zookeeper/stable/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.sha512",
+                        outputFile: "downloads/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.sha512"
+                    )
+              
+                    httpRequest(
+                        url: "https://dlcdn.apache.org/zookeeper/stable/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc",
+                        outputFile: "downloads/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc"
+                    )
+              
             }
         }
       
@@ -71,7 +82,7 @@ pipeline {
                 expression { return !fileExists("src/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin") }
             }
             steps {
-                // Extracts the file into the specified directory
+                sh "gpg --verify downloads/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc downloads/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz"
                 untar file: "downloads/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz", dir: 'src'
             }
         }
@@ -85,6 +96,11 @@ pipeline {
                     httpRequest(
                         url: "https://www.apache.org/dyn/closer.lua/solr/solr/${env.SOLR_VERSION}/solr-${env.SOLR_VERSION}.tgz?action=download",
                         outputFile: "downloads/solr-${env.SOLR_VERSION}.tgz"
+                    )
+              
+                    httpRequest(
+                        url: "https://downloads.apache.org/solr/solr/${env.SOLR_VERSION}/solr-${env.SOLR_VERSION}.tgz.sha512",
+                        outputFile: "downloads/solr-${env.SOLR_VERSION}.tgz.sha512"
                     )
 
             }
