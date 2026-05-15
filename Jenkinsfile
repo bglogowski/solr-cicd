@@ -104,7 +104,9 @@ pipeline {
             steps {
                 sh '$JAVA_HOME/bin/java -version'
                 dir("src/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin") {
-                    sh '$JAVA_HOME/bin/java "lib/*" org.apache.zookeeper.Version'
+                    sh """
+                        $JAVA_HOME/bin/java "lib/*" org.apache.zookeeper.Version
+                    """
                 }
                 sh "src/solr-${env.SOLR_VERSION}/bin/solr version"
                 
