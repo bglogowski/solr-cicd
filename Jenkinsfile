@@ -34,7 +34,7 @@ pipeline {
                 expression { return !fileExists("KEYS") }
             }
             steps {
-                sh 'curl --silent -O https://downloads.apache.org/httpd/KEYS'
+                sh 'curl --silent -O https://downloads.apache.org/zookeeper/KEYS'
                 sh 'gpg --import KEYS'
 
             }
