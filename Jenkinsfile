@@ -68,7 +68,7 @@ pipeline {
       
         stage('Extract ZooKeeper') {
            when {
-                expression { return !fileExists("src/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz") }
+                expression { return !fileExists("src/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin") }
             }
             steps {
                 // Extracts the file into the specified directory
