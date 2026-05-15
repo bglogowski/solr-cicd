@@ -34,7 +34,7 @@ pipeline {
                 expression { return !fileExists("KEYS") }
             }
             steps {
-                sh 'curl -O https://apache.org'
+                sh 'curl --silent -O https://downloads.apache.org/httpd/KEYS'
                 sh 'gpg --import KEYS'
 
             }
