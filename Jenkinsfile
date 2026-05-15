@@ -29,6 +29,18 @@ pipeline {
             }
         }
       
+        stage('Get GPG Keys') {
+            when {
+                expression { return !fileExists("KEYS") }
+            }
+            steps {
+                sh 'curl -O https://apache.org'
+                sh 'gpg --import KEYS'
+
+            }
+        }
+
+      
         stage('Download Temurin JDK') {
             when {
                 expression { return !fileExists("downloads/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz") }
