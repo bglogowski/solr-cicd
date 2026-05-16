@@ -23,9 +23,7 @@ pipeline {
 
         stage('Create Directories') {
             steps {
-                sh 'mkdir -p downloads/temurin'
-                sh 'mkdir -p downloads/zookeeper'
-                sh 'mkdir -p downloads/solr'
+
                 sh 'mkdir -p java'
                 sh 'mkdir -p src'
             }
@@ -33,15 +31,10 @@ pipeline {
             
         stage('Import Temurin Java GPG Keys') {
             when {
-                expression { return !fileExists("downloads/temurin/KEYS") }
+                expression { return !fileExists("java/jdk-${env.TEMURIN_VERSION}+${env.TEMURIN_PATCH_RELEASE}") }
             }
             steps {
-                echo "Getting GPG Keys"
-                httpRequest(
-                        url: "https://packages.adoptium.net/artifactory/api/gpg/key/public",
-                        outputFile: "downloads/temurin/KEYS"
-                )
-                sh 'gpg --import downloads/temurin/KEYS'
+                sh 'wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --import'
             }
         }
         
@@ -50,18 +43,23 @@ pipeline {
                 expression { return !fileExists("downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz") }
             }
             steps {
+                sh 'mkdir -p downloads/temurin'
+                dir('downloads/temurin') {
                     echo "Getting Temurin JDK binary distribution"
-                    httpRequest(
-                        url: "https://github.com/adoptium/temurin${env.TEMURIN_MAJOR_VERSION}-binaries/releases/download/jdk-${env.TEMURIN_VERSION}%2B${env.TEMURIN_PATCH_RELEASE}/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz",
-                        outputFile: "downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz"
-                    )
-
+                    sh """
+                        wget -q \
+                            -O OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz
+                            https://github.com/adoptium/temurin${env.TEMURIN_MAJOR_VERSION}-binaries/releases/download/jdk-${env.TEMURIN_VERSION}%2B${env.TEMURIN_PATCH_RELEASE}/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz
+                    """
+                      
                     echo "Getting Temurin JDK binary distribution signature"
-                    httpRequest(
-                        url: "https://github.com/adoptium/temurin${env.TEMURIN_MAJOR_VERSION}-binaries/releases/download/jdk-${env.TEMURIN_VERSION}%2B${env.TEMURIN_PATCH_RELEASE}/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz.sig",
-                        outputFile: "downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz.sig"
-                    )
+                    sh """
+                        wget -q \
+                            -O OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz.sig
+                            https://github.com/adoptium/temurin${env.TEMURIN_MAJOR_VERSION}-binaries/releases/download/jdk-${env.TEMURIN_VERSION}%2B${env.TEMURIN_PATCH_RELEASE}/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz.sig
+                    """
 
+                }
             }
         }
 
@@ -71,12 +69,14 @@ pipeline {
             }
             steps {
                 echo "Verify GPG signature"
-                sh """
-                    gpg --verify \
-                        downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz.sig \
-                        downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz \
-                        || rm -f downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz
-                """
+                dir('downloads/temurin') {
+                    sh """
+                        gpg --verify \
+                            OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz.sig \
+                            OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz \
+                            || /bin/rm -f OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz
+                    """
+                }
             }
         }
 
@@ -85,42 +85,43 @@ pipeline {
                 expression { return !fileExists("java/jdk-${env.TEMURIN_VERSION}+${env.TEMURIN_PATCH_RELEASE}") }
             }
             steps {
-                untar file: "downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz", dir: 'java'
+                sh 'mkdir -p java'
+                dir('java') {
+                    sh "tar xzf ../downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz"
+                }
             }
         }
-
 
         stage('Import ZooKeeper GPG Keys') {
             when {
-                expression { return !fileExists("downloads/zookeeper/KEYS") }
+                expression { return !fileExists("src/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin") }
             }
             steps {
-                echo "Getting GPG Keys"
-                httpRequest(
-                        url: "https://downloads.apache.org/zookeeper/KEYS",
-                        outputFile: "downloads/zookeeper/KEYS"
-                )
-                sh 'gpg --import downloads/zookeeper/KEYS'
+                sh 'wget -qO - https://downloads.apache.org/zookeeper/KEYS | gpg --import'
             }
         }
-
 
         stage('Download ZooKeeper') {
             when {
                 expression { return !fileExists("downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz") }
             }
             steps {
+                sh 'mkdir -p downloads/zookeeper'
+                dir('downloads/zookeeper') {
                     echo "Getting ZooKeeper binary distribution"
-                    httpRequest(
-                        url: "https://dlcdn.apache.org/zookeeper/stable/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz",
-                        outputFile: "downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz"
-                    )
+                    sh """
+                        wget -q \
+                            -O apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz
+                            https://dlcdn.apache.org/zookeeper/stable/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz
+                    """
               
                     echo "Getting ZooKeeper binary distribution signature"
-                    httpRequest(
-                        url: "https://dlcdn.apache.org/zookeeper/stable/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc",
-                        outputFile: "downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc"
-                    )
+                    sh """
+                        wget -q \
+                            -O https://dlcdn.apache.org/zookeeper/stable/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc
+                            https://dlcdn.apache.org/zookeeper/stable/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc
+                    """
+                }
               
             }
         }
@@ -131,12 +132,14 @@ pipeline {
             }
             steps {
                 echo "Verify GPG signature"
-                sh """
-                    gpg --verify \
-                        downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc \
-                        downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz \
-                        || rm -f downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz
-                """
+                dir('downloads/zookeeper') {
+                    sh """
+                        gpg --verify \
+                            apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc \
+                            apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz \
+                            || /bin/rm -f apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz
+                    """
+                }
             }
         }
       
@@ -145,21 +148,19 @@ pipeline {
                 expression { return !fileExists("src/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin") }
             }
             steps {
-                untar file: "downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz", dir: 'src'
+                sh 'mkdir -p src'
+                dir('src') {
+                    sh "tar xzf ../downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz"
+                }
             }
         }
 
         stage('Import Solr GPG Keys') {
             when {
-                expression { return !fileExists("downloads/solr/KEYS") }
+                expression { return !fileExists("src/solr-${env.SOLR_VERSION}") }
             }
             steps {
-                echo "Getting GPG Keys"
-                httpRequest(
-                        url: "https://downloads.apache.org/solr/KEYS",
-                        outputFile: "downloads/solr/KEYS"
-                )
-                sh 'gpg --import downloads/solr/KEYS'
+                sh 'wget -qO - https://downloads.apache.org/solr/KEYS | gpg --import'
             }
         }
 
@@ -168,17 +169,23 @@ pipeline {
                 expression { return !fileExists("downloads/solr/solr-${env.SOLR_VERSION}.tgz") }
             }
             steps {
+                sh 'mkdir -p downloads/solr'
+                dir('downloads/solr') {
                     echo "Getting Solr binary distribution"
-                    httpRequest(
-                        url: "https://www.apache.org/dyn/closer.lua/solr/solr/${env.SOLR_VERSION}/solr-${env.SOLR_VERSION}.tgz?action=download",
-                        outputFile: "downloads/solr/solr-${env.SOLR_VERSION}.tgz"
-                    )
+                    sh """
+                        wget -q \
+                            -O solr-${env.SOLR_VERSION}.tgz
+                            https://downloads.apache.org/solr/solr/${env.SOLR_VERSION}/solr-${env.SOLR_VERSION}.tgz
+                    """
               
                     echo "Getting Solr binary distribution signature"
-                    httpRequest(
-                        url: "https://downloads.apache.org/solr/solr/${env.SOLR_VERSION}/solr-${env.SOLR_VERSION}.tgz.asc",
-                        outputFile: "downloads/solr/solr-${env.SOLR_VERSION}.tgz.asc"
-                    )
+                    sh """
+                        wget -q \
+                            -O solr-${env.SOLR_VERSION}.tgz.asc
+                            https://downloads.apache.org/solr/solr/${env.SOLR_VERSION}/solr-${env.SOLR_VERSION}.tgz.asc
+                    """
+                  
+                }
 
             }
         }
@@ -189,12 +196,14 @@ pipeline {
             }
             steps {
                 echo "Verify GPG signature"
-                sh """
-                    gpg --verify \
-                        downloads/solr/solr-${env.SOLR_VERSION}.tgz.asc \
-                        downloads/solr/solr-${env.SOLR_VERSION}.tgz \
-                        || rm -f downloads/solr/solr-${env.SOLR_VERSION}.tgz
-                """
+                dir('downloads/solr') {
+                    sh """
+                        gpg --verify \
+                            solr-${env.SOLR_VERSION}.tgz.asc \
+                            solr-${env.SOLR_VERSION}.tgz \
+                            || /bin/rm -f solr-${env.SOLR_VERSION}.tgz
+                    """
+                }
             }
         }
 
@@ -203,8 +212,10 @@ pipeline {
                 expression { return !fileExists("src/solr-${env.SOLR_VERSION}") }
             }
             steps {
-
-                untar file: "downloads/solr/solr-${env.SOLR_VERSION}.tgz", dir: 'src'
+                sh 'mkdir -p src'
+                dir('src') {
+                    sh "tar xzf ../downloads/solr/solr-${env.SOLR_VERSION}.tgz"
+                }
             }
         }
 
