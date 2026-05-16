@@ -16,7 +16,7 @@ pipeline {
         TEMURIN_MAJOR_VERSION = '21'
         TEMURIN_VERSION = "${env.TEMURIN_MAJOR_VERSION}.0.11"
         TEMURIN_PATCH_RELEASE = '10'
-        PYTHON_VERSION = '3.13.13'
+        PYTHON_VERSION = '3.14.5'
         JAVA_HOME = "/var/lib/jenkins/workspace/solr-cicd/java/jdk-${env.TEMURIN_VERSION}+${env.TEMURIN_PATCH_RELEASE}"
         PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
       
