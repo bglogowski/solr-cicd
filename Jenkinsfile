@@ -216,11 +216,7 @@ pipeline {
                 expression { return !fileExists("src/Python-${env.PYTHON_VERSION}") }
             }
             steps {
-                // Python no longer uses GPG
-                // https://www.python.org/downloads/metadata/sigstore/
-                // echo 'Import Python GPG public key(s)'
-                // sh 'gpg --recv-keys A821E680E5FA6305'
-                
+                echo 'Verify Python sigstore signature'
                 dir('downloads/python') {
                     sh 'mkdir -p tmp'
                     sh """
@@ -237,9 +233,7 @@ pipeline {
                     """
                 }
 
-
-              
-                echo 'Extract Python'
+                echo 'Extract Python source code'
                 sh 'mkdir -p src'
                 dir('src') {
                     sh "tar xzf ../downloads/python/Python-${env.PYTHON_VERSION}.tgz"
