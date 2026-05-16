@@ -230,7 +230,7 @@ pipeline {
                         python -m sigstore verify identity \
                             --bundle Python-${env.PYTHON_VERSION}.tgz.sigstore \
                             --cert-identity pablogsal@python.org \
-                            --cert-oidc-issuer https://accounts.google.com \
+                            --cert-oidc-issuer https://github.com/login/oauth \
                             Python-${env.PYTHON_VERSION}.tgz
                         deactivate
                         /bin/rm -rf tmp
