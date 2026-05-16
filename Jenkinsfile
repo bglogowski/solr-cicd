@@ -218,8 +218,6 @@ pipeline {
             steps {
                 echo 'Import Python GPG public key(s)'
                 sh 'gpg --recv-keys A821E680E5FA6305'
-                sh 'gpg --recv-keys 64E628F8D684696D'
-
 
                 echo 'Verify Solr GPG signature'
                 dir('downloads/python') {
