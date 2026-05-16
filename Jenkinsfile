@@ -229,7 +229,7 @@ pipeline {
                         python3 -m pip install -r https://raw.githubusercontent.com/sigstore/sigstore-python/main/install/requirements.txt
                         python -m sigstore verify identity \
                             --bundle Python-${env.PYTHON_VERSION}.tgz.sigstore \
-                            --cert-identity pablogsal@python.org \
+                            --cert-identity hugo@python.org \
                             --cert-oidc-issuer https://github.com/login/oauth \
                             Python-${env.PYTHON_VERSION}.tgz
                         deactivate
