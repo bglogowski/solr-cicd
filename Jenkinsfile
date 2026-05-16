@@ -31,14 +31,14 @@ pipeline {
                     echo 'Get Temurin Java binary distribution'
                     sh """
                         wget -q \
-                            -O OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz
+                            -O OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz \
                             https://github.com/adoptium/temurin${env.TEMURIN_MAJOR_VERSION}-binaries/releases/download/jdk-${env.TEMURIN_VERSION}%2B${env.TEMURIN_PATCH_RELEASE}/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz
                     """
                       
                     echo 'Get Temurin Java binary distribution signature'
                     sh """
                         wget -q \
-                            -O OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz.sig
+                            -O OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz.sig \
                             https://github.com/adoptium/temurin${env.TEMURIN_MAJOR_VERSION}-binaries/releases/download/jdk-${env.TEMURIN_VERSION}%2B${env.TEMURIN_PATCH_RELEASE}/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz.sig
                     """
 
@@ -86,14 +86,14 @@ pipeline {
                     echo 'Get ZooKeeper binary distribution'
                     sh """
                         wget -q \
-                            -O apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz
+                            -O apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz \
                             https://dlcdn.apache.org/zookeeper/stable/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz
                     """
               
                     echo 'Get ZooKeeper binary distribution signature'
                     sh """
                         wget -q \
-                            -O https://dlcdn.apache.org/zookeeper/stable/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc
+                            -O apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc \
                             https://dlcdn.apache.org/zookeeper/stable/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc
                     """
                 }
@@ -138,14 +138,14 @@ pipeline {
                     echo 'Get Solr binary distribution'
                     sh """
                         wget -q \
-                            -O solr-${env.SOLR_VERSION}.tgz
+                            -O solr-${env.SOLR_VERSION}.tgz \
                             https://downloads.apache.org/solr/solr/${env.SOLR_VERSION}/solr-${env.SOLR_VERSION}.tgz
                     """
               
                     echo 'Get Solr binary distribution signature'
                     sh """
                         wget -q \
-                            -O solr-${env.SOLR_VERSION}.tgz.asc
+                            -O solr-${env.SOLR_VERSION}.tgz.asc \
                             https://downloads.apache.org/solr/solr/${env.SOLR_VERSION}/solr-${env.SOLR_VERSION}.tgz.asc
                     """
                   
