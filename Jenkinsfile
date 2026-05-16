@@ -20,23 +20,6 @@ pipeline {
     }
 
     stages {
-
-        stage('Create Directories') {
-            steps {
-
-                sh 'mkdir -p java'
-                sh 'mkdir -p src'
-            }
-        }
-            
-        stage('Import Temurin Java GPG Keys') {
-            when {
-                expression { return !fileExists("java/jdk-${env.TEMURIN_VERSION}+${env.TEMURIN_PATCH_RELEASE}") }
-            }
-            steps {
-                sh 'wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --import'
-            }
-        }
         
         stage('Download Temurin Java') {
             when {
@@ -45,14 +28,14 @@ pipeline {
             steps {
                 sh 'mkdir -p downloads/temurin'
                 dir('downloads/temurin') {
-                    echo "Getting Temurin JDK binary distribution"
+                    echo 'Get Temurin Java binary distribution'
                     sh """
                         wget -q \
                             -O OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz
                             https://github.com/adoptium/temurin${env.TEMURIN_MAJOR_VERSION}-binaries/releases/download/jdk-${env.TEMURIN_VERSION}%2B${env.TEMURIN_PATCH_RELEASE}/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz
                     """
                       
-                    echo "Getting Temurin JDK binary distribution signature"
+                    echo 'Get Temurin Java binary distribution signature'
                     sh """
                         wget -q \
                             -O OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz.sig
@@ -63,12 +46,16 @@ pipeline {
             }
         }
 
-        stage('Validate Temurin Java files') {
+
+        stage('Validate and Extract Temurin Java') {
            when {
                 expression { return !fileExists("java/jdk-${env.TEMURIN_VERSION}+${env.TEMURIN_PATCH_RELEASE}") }
             }
             steps {
-                echo "Verify GPG signature"
+                echo 'Import Temurin Java GPG public key(s)'
+                sh 'wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --import'
+              
+                echo 'Verify Temurin Java GPG signature'
                 dir('downloads/temurin') {
                     sh """
                         gpg --verify \
@@ -77,14 +64,8 @@ pipeline {
                             || /bin/rm -f OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz
                     """
                 }
-            }
-        }
-
-        stage('Extract Temurin Java') {
-           when {
-                expression { return !fileExists("java/jdk-${env.TEMURIN_VERSION}+${env.TEMURIN_PATCH_RELEASE}") }
-            }
-            steps {
+              
+                echo 'Extract Temurin Java'
                 sh 'mkdir -p java'
                 dir('java') {
                     sh "tar xzf ../downloads/temurin/OpenJDK${env.TEMURIN_MAJOR_VERSION}U-jdk_x64_linux_hotspot_${env.TEMURIN_VERSION}_${env.TEMURIN_PATCH_RELEASE}.tar.gz"
@@ -92,30 +73,24 @@ pipeline {
             }
         }
 
-        stage('Import ZooKeeper GPG Keys') {
-            when {
-                expression { return !fileExists("src/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin") }
-            }
-            steps {
-                sh 'wget -qO - https://downloads.apache.org/zookeeper/KEYS | gpg --import'
-            }
-        }
 
         stage('Download ZooKeeper') {
+            // Note: This should be the latest stable release
+          
             when {
                 expression { return !fileExists("downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz") }
             }
             steps {
                 sh 'mkdir -p downloads/zookeeper'
                 dir('downloads/zookeeper') {
-                    echo "Getting ZooKeeper binary distribution"
+                    echo 'Get ZooKeeper binary distribution'
                     sh """
                         wget -q \
                             -O apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz
                             https://dlcdn.apache.org/zookeeper/stable/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz
                     """
               
-                    echo "Getting ZooKeeper binary distribution signature"
+                    echo 'Get ZooKeeper binary distribution signature'
                     sh """
                         wget -q \
                             -O https://dlcdn.apache.org/zookeeper/stable/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc
@@ -126,43 +101,32 @@ pipeline {
             }
         }
 
-        stage('Validate ZooKeeper files') {
+      
+        stage('Validate and Extract ZooKeeper') {
            when {
                 expression { return !fileExists("src/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin") }
             }
             steps {
-                echo "Verify GPG signature"
+                echo 'Import Zookeeper GPG public key(s)'
+                sh 'wget -qO - https://downloads.apache.org/zookeeper/KEYS | gpg --import'
+              
+                echo 'Verify Zookeeper GPG signature'
                 dir('downloads/zookeeper') {
                     sh """
                         gpg --verify \
                             apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz.asc \
-                            apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz \
-                            || /bin/rm -f apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz
+                            apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz
                     """
                 }
-            }
-        }
-      
-        stage('Extract ZooKeeper') {
-           when {
-                expression { return !fileExists("src/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin") }
-            }
-            steps {
+              
+                echo 'Extract Zookeeper'
                 sh 'mkdir -p src'
                 dir('src') {
                     sh "tar xzf ../downloads/zookeeper/apache-zookeeper-${env.ZOOKEEPER_VERSION}-bin.tar.gz"
                 }
             }
         }
-
-        stage('Import Solr GPG Keys') {
-            when {
-                expression { return !fileExists("src/solr-${env.SOLR_VERSION}") }
-            }
-            steps {
-                sh 'wget -qO - https://downloads.apache.org/solr/KEYS | gpg --import'
-            }
-        }
+      
 
         stage('Download Solr') {
             when {
@@ -171,14 +135,14 @@ pipeline {
             steps {
                 sh 'mkdir -p downloads/solr'
                 dir('downloads/solr') {
-                    echo "Getting Solr binary distribution"
+                    echo 'Get Solr binary distribution'
                     sh """
                         wget -q \
                             -O solr-${env.SOLR_VERSION}.tgz
                             https://downloads.apache.org/solr/solr/${env.SOLR_VERSION}/solr-${env.SOLR_VERSION}.tgz
                     """
               
-                    echo "Getting Solr binary distribution signature"
+                    echo 'Get Solr binary distribution signature'
                     sh """
                         wget -q \
                             -O solr-${env.SOLR_VERSION}.tgz.asc
@@ -190,12 +154,15 @@ pipeline {
             }
         }
 
-        stage('Validate Solr files') {
+        stage('Validate and Extract Solr') {
            when {
                 expression { return !fileExists("src/solr-${env.SOLR_VERSION}") }
             }
             steps {
-                echo "Verify GPG signature"
+                echo 'Import Solr GPG public key(s)'
+                sh 'wget -qO - https://downloads.apache.org/solr/KEYS | gpg --import'
+
+                echo 'Verify Solr GPG signature'
                 dir('downloads/solr') {
                     sh """
                         gpg --verify \
@@ -204,14 +171,8 @@ pipeline {
                             || /bin/rm -f solr-${env.SOLR_VERSION}.tgz
                     """
                 }
-            }
-        }
-
-        stage('Extract Solr') {
-           when {
-                expression { return !fileExists("src/solr-${env.SOLR_VERSION}") }
-            }
-            steps {
+              
+                echo 'Extract Solr'
                 sh 'mkdir -p src'
                 dir('src') {
                     sh "tar xzf ../downloads/solr/solr-${env.SOLR_VERSION}.tgz"
