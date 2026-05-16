@@ -198,11 +198,11 @@ pipeline {
                             https://www.python.org/ftp/python/${env.PYTHON_VERSION}/Python-${env.PYTHON_VERSION}.tgz
                     """
               
-                    echo 'Get Solr binary distribution signature'
+                    echo 'Get Python source code signature'
                     sh """
                         wget -q \
-                            -O Python-${env.PYTHON_VERSION}.tgz.sig \
-                            https://www.python.org/ftp/python/${env.PYTHON_VERSION}/Python-${env.PYTHON_VERSION}.tgz.sig
+                            -O Python-${env.PYTHON_VERSION}.tgz.sigstore \
+                            https://www.python.org/ftp/python/${env.PYTHON_VERSION}/Python-${env.PYTHON_VERSION}.tgz.sigstore
                     """
                   
                 }
@@ -216,17 +216,28 @@ pipeline {
                 expression { return !fileExists("src/Python-${env.PYTHON_VERSION}") }
             }
             steps {
-                echo 'Import Python GPG public key(s)'
-                sh 'gpg --recv-keys A821E680E5FA6305'
-
-                echo 'Verify Solr GPG signature'
+                // Python no longer uses GPG
+                // https://www.python.org/downloads/metadata/sigstore/
+                // echo 'Import Python GPG public key(s)'
+                // sh 'gpg --recv-keys A821E680E5FA6305'
+                
                 dir('downloads/python') {
+                    sh 'mkdir -p tmp'
                     sh """
-                        gpg --verify \
-                            Python-${env.PYTHON_VERSION}.tgz.sig \
+                        python3 -m venv tmp/validate_python
+                        source tmp/validate_python/bin/activate
+                        python3 -m pip install -r https://raw.githubusercontent.com/sigstore/sigstore-python/main/install/requirements.txt
+                        python -m sigstore verify identity \
+                            --bundle Python-${env.PYTHON_VERSION}.tgz.sigstore \
+                            --cert-identity pablogsal@python.org \
+                            --cert-oidc-issuer https://accounts.google.com \
                             Python-${env.PYTHON_VERSION}.tgz
+                        deactivate
+                        /bin/rm -rf tmp
                     """
                 }
+
+
               
                 echo 'Extract Python'
                 sh 'mkdir -p src'
