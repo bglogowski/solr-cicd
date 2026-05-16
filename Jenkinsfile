@@ -16,8 +16,10 @@ pipeline {
         TEMURIN_MAJOR_VERSION = '21'
         TEMURIN_VERSION = "${env.TEMURIN_MAJOR_VERSION}.0.11"
         TEMURIN_PATCH_RELEASE = '10'
+        PYTHON_VERSION = '3.14.5'
         JAVA_HOME = "/var/lib/jenkins/workspace/solr-cicd/java/jdk-${env.TEMURIN_VERSION}+${env.TEMURIN_PATCH_RELEASE}"
         PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+      
     }
 
     stages {
@@ -181,6 +183,62 @@ pipeline {
             }
         }
 
+      
+        stage('Download Python') {
+            when {
+                expression { return !fileExists("downloads/python/Python-${env.PYTHON_VERSION}.tgz") }
+            }
+            steps {
+                sh 'mkdir -p downloads/python'
+                dir('downloads/python') {
+                    echo 'Get Python source code'
+                    sh """
+                        wget -q \
+                            -O Python-${env.PYTHON_VERSION}.tgz \
+                            https://www.python.org/ftp/python/${env.PYTHON_VERSION}/Python-${env.PYTHON_VERSION}.tgz
+                    """
+              
+                    echo 'Get Solr binary distribution signature'
+                    sh """
+                        wget -q \
+                            -O Python-${env.PYTHON_VERSION}.tgz.sig \
+                            https://www.python.org/ftp/python/${env.PYTHON_VERSION}/Python-${env.PYTHON_VERSION}.tgz.sig
+                    """
+                  
+                }
+
+            }
+        }
+
+
+        stage('Validate and Extract Python') {
+           when {
+                expression { return !fileExists("src/Python-${env.PYTHON_VERSION}") }
+            }
+            steps {
+                echo 'Import Python GPG public key(s)'
+                sh 'gpg --recv-keys A821E680E5FA6305'
+                sh 'gpg --recv-keys 64E628F8D684696D'
+
+
+                echo 'Verify Solr GPG signature'
+                dir('downloads/solr') {
+                    sh """
+                        gpg --verify \
+                            Python-${env.PYTHON_VERSION}.tgz.sig \
+                            Python-${env.PYTHON_VERSION}.tgz
+                    """
+                }
+              
+                echo 'Extract Python'
+                sh 'mkdir -p src'
+                dir('src') {
+                    sh "tar xzf ../downloads/python/Python-${env.PYTHON_VERSION}.tgz"
+                }
+            }
+        }
+
+        
         stage('Validate Environment') {
             steps {
                 sh '$JAVA_HOME/bin/java -version'
