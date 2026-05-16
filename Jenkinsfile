@@ -224,9 +224,8 @@ pipeline {
                 dir('downloads/python') {
                     sh 'mkdir -p tmp'
                     sh """
-                        #!/bin/bash
                         python3 -m venv tmp/validate_python
-                        source tmp/validate_python/bin/activate
+                        . tmp/validate_python/bin/activate
                         python3 -m pip install -r https://raw.githubusercontent.com/sigstore/sigstore-python/main/install/requirements.txt
                         python -m sigstore verify identity \
                             --bundle Python-${env.PYTHON_VERSION}.tgz.sigstore \
