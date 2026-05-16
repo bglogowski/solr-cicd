@@ -3,7 +3,7 @@ pipeline {
     agent any
 
     options {
-        ansiColor('xterm')
+        ansiColor('css')
         timeout(time: 4, unit: 'HOURS')
         buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '5'))
         timestamps()
