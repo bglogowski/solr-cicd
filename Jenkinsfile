@@ -222,7 +222,7 @@ pipeline {
 
 
                 echo 'Verify Solr GPG signature'
-                dir('downloads/solr') {
+                dir('downloads/python') {
                     sh """
                         gpg --verify \
                             Python-${env.PYTHON_VERSION}.tgz.sig \
